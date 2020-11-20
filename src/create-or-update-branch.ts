@@ -93,6 +93,13 @@ export async function createOrUpdateBranch(
   branchRemoteName: string,
   signoff: boolean
 ): Promise<CreateOrUpdateBranchResult> {
+  // For self-hosted runners the repository state persists between runs.
+  // This prunes the stale remote ref when the pull request branch was
+  // deleted after being merged or closed. Without this the push using
+  // '--force-with-lease' fails due to "stale info."
+  // https://github.com/peter-evans/create-pull-request/issues/633
+  await git.exec(['remote', 'prune', 'origin'])
+
   // Get the working base.
   // When a ref, it may or may not be the actual base.
   // When a commit, we must rebase onto the actual base.
